@@ -9,19 +9,22 @@ class GlassdoorCompanies_Spider(Spider):
     start_urls = ['https://www.glassdoor.com/Reviews/us-reviews-SRCH_IL.0,2_IN1.htm']
 
     def parse(self, response):
+        '''
+            Scraping each page listing the companies
+        '''
         num_companies = int(response.xpath('//div[@class="pb-lg-xxl pb-std"]//text()').extract()[-2].replace(',',''))
         num_pages = math.ceil(num_companies/10)
 
         num_pages = 300
-        for page in range(251, num_pages+1):
-            print('-'*70)
-            print(f'Parsing page {page}')
-            print('-'*70)
+        for page in range(1, num_pages+1):
             url = f'https://www.glassdoor.com/Reviews/us-reviews-SRCH_IL.0,2_IN1_IP{page}.htm'
 
             yield Request(url = url, callback = self.parse_page)
 
     def parse_page(self, response):
+        '''
+            scraping the list of company in a page
+        '''
         rows = response.xpath('//div[@class="single-company-result module "]')
 
         for row in rows:
@@ -31,14 +34,17 @@ class GlassdoorCompanies_Spider(Spider):
             yield Request(url = url, callback = self.parse_summary_page)
 
     def parse_summary_page(self, response):
+        '''
+            scraping the summary page of a company
+        '''
         S_CName = response.xpath('//span[@id="DivisionsDropdownComponent"]/text()').extract_first()
 
         S_Industry = response.xpath('//div[@class="info flexbox row col-hh"]/div[6]//text()').extract()
+        # Test if industry and revenue data are included in the page (if not the data would be the next one in the list)
         if S_Industry and S_Industry[0].lower() == 'industry':
             S_Industry = S_Industry[1]
         else:
             S_Industry = np.nan
-
         S_Revenue = response.xpath('//div[@class="info flexbox row col-hh"]/div[7]//text()').extract()
         if S_Revenue and S_Revenue[0].lower() == 'revenue':
             S_Revenue = S_Revenue[1]
@@ -57,14 +63,20 @@ class GlassdoorCompanies_Spider(Spider):
         yield Request(url = url, meta = meta, callback = self.parse_benefits_page)
 
     def parse_benefits_page(self, response):
+        '''
+            scraping the benefits page of a company
+        '''
         path_benefits = response.xpath('//div[@class="module benefitsList"]/div[3]/ul/li')
 
         meta = response.meta.copy()
 
+        # Loop collecting all the benefits without manual assignation
         for index in range(len(path_benefits)):
             benef = path_benefits[index].xpath('.//text()').extract()[-1]
 
+            # Processing the benefits name to remove special characters and spaces
             benef = benef.split(' (')[0].replace(' & ', '_').replace(' ','_').replace('-','_').replace('\'', '')
+            # str_count is the content of eache benefit variable
             str_count = path_benefits[index].xpath('.//@title').extract_first().replace(' employees reporting', '')
 
             if not str_count:
@@ -80,6 +92,9 @@ class GlassdoorCompanies_Spider(Spider):
         yield Request(url = url, meta = meta, callback = self.parse_reviews_all_pages)
 
     def parse_reviews_all_pages(self, response):
+        '''
+            scraping all reviews pages of a company
+        '''
         i=10000
         while True:
             i-=1
@@ -90,7 +105,7 @@ class GlassdoorCompanies_Spider(Spider):
                 continue
             break
 
-        num = 50
+        num = 50 # max number of review pages scraped per company
         index = 0
         while index <= len(range(num_pages)) and index <= num:
             url = response.url[:-4] + f'_P{index+1}.htm'
@@ -104,11 +119,15 @@ class GlassdoorCompanies_Spider(Spider):
             yield Request(url = url, meta = meta, callback = self.parse_reviews_page)
 
     def parse_reviews_page(self, response):
+        '''
+            scraping each review page for a company
+        '''
         reviews = response.xpath('//ol[@class=" highlightsActive empReviews emp-reviews-feed pl-0"]/li')
 
         index = 1
         for review in reviews:
             index+=1
+            # I forgot to collect that one ...
             Date = review.xpath('.//time[@class="date subtle small"]/text()').extract_first()
 
             i=0
