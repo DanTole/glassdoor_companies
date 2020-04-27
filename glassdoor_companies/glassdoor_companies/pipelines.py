@@ -10,7 +10,7 @@ from scrapy.exporters import CsvItemExporter
 class GlassdoorCompaniesPipeline(object):
 
     def __init__(self):
-        self.filename = 'glassdoor_reviews2.csv'
+        self.filename = 'glassdoor_reviews5.csv'
 
     def open_spider(self, spider):
         self.csvfile = open(self.filename, 'wb')

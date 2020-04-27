@@ -12,8 +12,8 @@ class GlassdoorCompanies_Spider(Spider):
         num_companies = int(response.xpath('//div[@class="pb-lg-xxl pb-std"]//text()').extract()[-2].replace(',',''))
         num_pages = math.ceil(num_companies/10)
 
-        num_pages = 52
-        for page in range(51, num_pages+1):
+        num_pages = 300
+        for page in range(251, num_pages+1):
             print('-'*70)
             print(f'Parsing page {page}')
             print('-'*70)
